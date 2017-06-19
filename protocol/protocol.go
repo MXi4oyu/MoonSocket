@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	ConstHeader = "Headers"
-	ConstHeaderLength = 7
-	ConstMLength = 4
+	ConstHeader = "MoonSocket"
+	ConstHeaderLength = 10
+	ConstDataLength = 4
 )
 
-//封包
 
+//封包
 func Enpack(msg [] byte) [] byte  {
 
+	//使用ConstHeader+msg长度+msg来封装一条数据包
 	return append(append([]byte(ConstHeader),IntToBytes(len(msg))...),msg...)
-
 }
 
 //解包
@@ -30,20 +30,20 @@ func Depack(buffer [] byte) [] byte  {
 
 	for i=0;i<length;i++{
 
-		if length<i+ConstHeaderLength+ConstMLength{
-
+		if length<i+ConstHeaderLength+ConstDataLength{
+			//解包完毕
 			break
 		}
 
 		if string(buffer[i:i+ConstHeaderLength]) == ConstHeader{
 
-			msgLength := BytesToInt(buffer[i+ConstHeaderLength:i+ConstHeaderLength+ConstMLength])
+			msgLength := BytesToInt(buffer[i+ConstHeaderLength:i+ConstHeaderLength+ConstDataLength])
 
-			if length<i+ConstHeaderLength+ConstMLength+msgLength{
+			if length<i+ConstHeaderLength+ConstDataLength+msgLength{
 				break
 			}
 
-			data=buffer[i+ConstHeaderLength+ConstMLength:i+ConstHeaderLength+ConstMLength+msgLength]
+			data=buffer[i+ConstHeaderLength+ConstDataLength:i+ConstHeaderLength+ConstDataLength+msgLength]
 		}
 	}
 
@@ -57,11 +57,12 @@ func Depack(buffer [] byte) [] byte  {
 
 //整型转换为字节
 func IntToBytes(n int) [] byte  {
-	x:=int32(n)
+	data:=int32(n)
 
 	bytesBuffer:=bytes.NewBuffer([] byte{})
-
-	binary.Write(bytesBuffer,binary.BigEndian,x)
+	//将data参数里面包含的数据写入到bytesBuffer中
+	//
+	binary.Write(bytesBuffer,binary.BigEndian,data)
 
 	return bytesBuffer.Bytes()
 }
@@ -71,8 +72,8 @@ func BytesToInt(b [] byte) int  {
 
 	bytesBuffer:=bytes.NewBuffer(b)
 
-	var x int32
-	binary.Read(bytesBuffer,binary.BigEndian,&x)
+	var data int32
+	binary.Read(bytesBuffer,binary.BigEndian,&data)
 
-	return int(x)
+	return int(data)
 }

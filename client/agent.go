@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"net"
+	"strconv"
+	"time"
+	"github.com/mxi4oyu/MoonSocket/protocol"
 )
 
 //定义CheckError方法，避免写太多到 if err!=nil
@@ -37,12 +40,29 @@ func main()  {
 
 	CheckError(err)
 
-	conn.Write([] byte("hello server!"))
+	msg:="测试自定义协议"
+	SendMsg(conn,msg)
 
-	buf:=make([] byte,1024)
+}
 
-	n,_:=conn.Read(buf)
+func GetSession() string{
+	gs1:=time.Now().Unix()
+	gs2:=strconv.FormatInt(gs1,10)
+	return gs2
+}
 
-	fmt.Print(string(buf[:n]))
+func SendMsg(conn net.Conn,msg string)  {
 
+	for i:=0;i<100;i++{
+		session:=GetSession()
+
+		words := "{\"ID\":"+ strconv.Itoa(i) +"\",\"Session\":"+session +",\"Meta\":\"golang\",\"Message\":\""+msg+"\"}"
+		conn.Write([] byte(words))
+		protocol.Enpack([]byte(words))
+		conn.Write(protocol.Enpack([]byte(words)))
+	}
+
+	fmt.Println("send over")
+
+	defer conn.Close()
 }
