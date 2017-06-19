@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	ConstHeader = "MoonSocket"
-	ConstHeaderLength = 10
-	ConstDataLength = 4
+	MsgHeader = "MoonSocket"
+	HeaderLength = 10
+	DataLength = 4
 )
 
 
 //封包
+//封包信息由 header + 信息长度 ＋ 信息内容组成
 func Enpack(msg [] byte) [] byte  {
 
-	//使用ConstHeader+msg长度+msg来封装一条数据包
-	return append(append([]byte(ConstHeader),IntToBytes(len(msg))...),msg...)
+	return append(append([]byte(MsgHeader),IntToBytes(len(msg))...),msg...)
 }
 
 //解包
@@ -25,25 +25,29 @@ func Enpack(msg [] byte) [] byte  {
 func Depack(buffer [] byte) [] byte  {
 
 	length:=len(buffer)
-	data:=make([] byte,32)
+	data:=make([] byte,64)
 	var i int
 
 	for i=0;i<length;i++{
 
-		if length<i+ConstHeaderLength+ConstDataLength{
+		if length<i+HeaderLength+DataLength{
 			//解包完毕
 			break
 		}
 
-		if string(buffer[i:i+ConstHeaderLength]) == ConstHeader{
+		//如果解析到头部，则解析包信息到data
+		if string(buffer[i:i+HeaderLength]) == MsgHeader{
 
-			msgLength := BytesToInt(buffer[i+ConstHeaderLength:i+ConstHeaderLength+ConstDataLength])
+			//将msg的长度转换为int
+			msgLength := BytesToInt(buffer[i+HeaderLength:i+HeaderLength+DataLength])
 
-			if length<i+ConstHeaderLength+ConstDataLength+msgLength{
+			if length<i+HeaderLength+DataLength+msgLength{
+				//解包完毕
 				break
 			}
 
-			data=buffer[i+ConstHeaderLength+ConstDataLength:i+ConstHeaderLength+ConstDataLength+msgLength]
+			//解析包信息到data
+			data=buffer[i+HeaderLength+DataLength:i+HeaderLength+DataLength+msgLength]
 		}
 	}
 
