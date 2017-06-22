@@ -39,10 +39,31 @@ func main()  {
 	conn,err:=net.DialTCP("tcp",nil,tcpAddr)
 
 	CheckError(err)
+	ch:=make(chan int,100)
 
-	msg:="测试自定义协议"
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for{
+		select {
+		case <-ticker.C:
+			ch<-1
+			go ClientMsgHandler(conn,ch)
+		case <-time.After(time.Second*10):
+			defer conn.Close()
+			fmt.Println("timeout")
+		}
+	}
+
+}
+
+//客户端消息处理
+func ClientMsgHandler(conn net.Conn,ch chan int)  {
+
+	<-ch
+	//获取当前时间
+	msg:=time.Now().String()
 	SendMsg(conn,msg)
-
 }
 
 func GetSession() string{
@@ -53,16 +74,11 @@ func GetSession() string{
 
 func SendMsg(conn net.Conn,msg string)  {
 
-	for i:=0;i<100;i++{
-		session:=GetSession()
+session:=GetSession()
 
-		words := "{\"ID\":"+ strconv.Itoa(i) +"\",\"Session\":"+session +",\"Meta\":\"golang\",\"Message\":\""+msg+"\"}"
-		conn.Write([] byte(words))
-		protocol.Enpack([]byte(words))
-		conn.Write(protocol.Enpack([]byte(words)))
-	}
+	words := "{\"Session\":"+session +",\"Meta\":\"Monitor\",\"Message\":\""+msg+"\"}"
+	conn.Write([] byte(words))
+	protocol.Enpack([]byte(words))
+	conn.Write(protocol.Enpack([]byte(words)))
 
-	fmt.Println("send over")
-
-	defer conn.Close()
 }

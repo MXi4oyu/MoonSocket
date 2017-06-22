@@ -6,6 +6,7 @@ import (
 	"net"
 	"log"
 	"github.com/mxi4oyu/MoonSocket/protocol"
+	"time"
 )
 
 
@@ -36,19 +37,21 @@ func main()  {
 
 	Log("Waiting for clients connect")
 
+
+
 	for{
 		new_conn,err:=server_listener.Accept()
 
 		CheckError(err)
 
-		go MsgHandler(new_conn)
+		go ServerMsgHandler(new_conn)
 	}
+
 	
 }
 
-//处理业务逻辑
-
-func MsgHandler(conn net.Conn)  {
+//服务端消息处理
+func ServerMsgHandler(conn net.Conn)  {
 
 	//存储被截断的数据
 	tmpbuf:=make([] byte,0)
@@ -73,14 +76,37 @@ func MsgHandler(conn net.Conn)  {
 		tmpbuf = protocol.Depack(append(tmpbuf,buf[:n]...))
 		fmt.Println("client say:",string(tmpbuf))
 
-		clientIp:=conn.RemoteAddr()
+		Msg:=tmpbuf
 
-		Log(clientIp)
-
-		conn.Write([] byte("hello:"+clientIp.String()+"\n"))
+		beatch :=make(chan byte)
+		//心跳计时，默认30秒
+		go HeartBeat(conn,beatch,30)
+		//检测每次Client是否有数据传来
+		go HeartChanHandler(Msg,beatch)
 
 	}
 
+}
+
+//处理心跳,根据HeartChanHandler判断Client是否在设定时间内发来信息
+func HeartBeat(conn net.Conn,heartChan chan byte,timeout int)  {
+	select {
+	case hc:=<-heartChan:
+		Log("<-heartChan:",string(hc))
+		conn.SetDeadline(time.Now().Add(time.Duration(timeout)*time.Second))
+		break
+	case <-time.After(time.Second*30):
+		Log("timeout")
+		conn.Close()
+	}
+}
+
+//处理心跳channel
+func HeartChanHandler( n [] byte,beatch chan byte)  {
+	for _,v:=range n{
+		beatch<-v
+	}
+	close(beatch)
 }
 
 //从channell中读取数据
