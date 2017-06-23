@@ -63,7 +63,9 @@ func ClientMsgHandler(conn net.Conn,ch chan int)  {
 	<-ch
 	//获取当前时间
 	msg:=time.Now().String()
-	SendMsg(conn,msg)
+	go SendMsg(conn,msg)
+	go ReadMsg(conn)
+
 }
 
 func GetSession() string{
@@ -72,13 +74,28 @@ func GetSession() string{
 	return gs2
 }
 
+//接收服务端发来的消息
+func ReadMsg(conn net.Conn)  {
+
+	//存储被截断的数据
+	tmpbuf:=make([] byte,0)
+	buf:=make([] byte,1024)
+
+	//将信息解包
+	n,_:=conn.Read(buf)
+	tmpbuf = protocol.Depack(append(tmpbuf,buf[:n]...))
+	msg:=string(tmpbuf)
+	fmt.Println("server say:",msg)
+}
+
+//向服务端发送消息
 func SendMsg(conn net.Conn,msg string)  {
 
 session:=GetSession()
 
 	words := "{\"Session\":"+session +",\"Meta\":\"Monitor\",\"Message\":\""+msg+"\"}"
-	conn.Write([] byte(words))
-	protocol.Enpack([]byte(words))
-	conn.Write(protocol.Enpack([]byte(words)))
+	//将信息封包
+	smsg:=protocol.Enpack([]byte(words))
+	conn.Write(smsg)
 
 }

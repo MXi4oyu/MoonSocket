@@ -64,6 +64,7 @@ func ServerMsgHandler(conn net.Conn)  {
 	go ReadChan(readchan)
 
 	for{
+		//读取客户端发来的消息
 		n,err:=conn.Read(buf)
 
 		if err!=nil{
@@ -77,6 +78,9 @@ func ServerMsgHandler(conn net.Conn)  {
 		fmt.Println("client say:",string(tmpbuf))
 
 		Msg:=tmpbuf
+
+		//向客户端发送消息
+		go WriteMsgToClient(conn)
 
 		beatch :=make(chan byte)
 		//心跳计时，默认30秒
@@ -99,6 +103,15 @@ func HeartBeat(conn net.Conn,heartChan chan byte,timeout int)  {
 		Log("timeout")
 		conn.Close()
 	}
+}
+
+//服务端向客户端发送消息
+func WriteMsgToClient(conn net.Conn)  {
+
+	talk:="wordpress"
+	//将信息封包
+	smsg:=protocol.Enpack([]byte(talk))
+	conn.Write(smsg)
 }
 
 //处理心跳channel
