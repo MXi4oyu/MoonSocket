@@ -9,3 +9,5 @@
 （3）——对长连接的处理 http://blog.csdn.net/mypc2010/article/details/73571746
 
 （4）——全双工收发消息 http://blog.csdn.net/mypc2010/article/details/73650049
+
+（5）——断线重连 http://blog.csdn.net/mypc2010/article/details/78276702
